@@ -1,0 +1,52 @@
+extensions:
+  zpages:
+    endpoint: :55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: '127.0.0.1:4317'
+  hostmetrics:
+    collection_interval: 1m
+    scrapers:
+      # cpu not supported on MacOS
+      # cpu:
+      load:
+      memory:
+
+processors:
+  batch: null
+
+exporters:
+  logging:
+    loglevel: info
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  jaeger:
+    endpoint: localhost:14250
+    insecure: true
+  otlp/elastic:
+    endpoint: "localhost:8200"
+    insecure: true
+    headers:
+      Authorization: "Bearer my_secret_token"
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - otlp
+        - hostmetrics
+      exporters:
+        - prometheus
+        #- otlp/elastic
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - batch
+      exporters:
+        #- otlp/elastic
+        - jaeger
+        - logging
+  extensions: [zpages]
