@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package co.elastic.maven;
+package co.elastic.maven.opentelemetry.eventspy;
 
-import co.elastic.maven.semconv.MavenOtelSemanticAttributes;
+import co.elastic.maven.opentelemetry.SpanRegistry;
+import co.elastic.maven.opentelemetry.semconv.MavenOtelSemanticAttributes;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -24,6 +25,8 @@ import org.apache.maven.project.MavenProject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -33,7 +36,8 @@ public class OtelEventSpy extends AbstractEventSpy {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final SpanRegistry spanRegistry = new SpanRegistry();
+    @Inject
+    private SpanRegistry spanRegistry;
 
     @Override
     public void init(EventSpy.Context context) throws Exception {
@@ -46,7 +50,7 @@ public class OtelEventSpy extends AbstractEventSpy {
             OpenTelemetrySdk.builder().setTracerProvider(sdkTracerProvider).buildAndRegisterGlobal();
             logger.warn("OpenTelemetry configured with Logging exporter");
         } else {
-            logger.info("OpenTelemetry configured with environment variables (OTEL_EXPORTER_OTLP_ENDPOINT: " + otelExporterOtlpEndpoint + "...)");
+            logger.warn("OpenTelemetry configured with environment variables (OTEL_EXPORTER_OTLP_ENDPOINT: " + otelExporterOtlpEndpoint + "...)");
         }
     }
 
@@ -113,7 +117,7 @@ public class OtelEventSpy extends AbstractEventSpy {
                 try (Scope scope = rootSpan.makeCurrent()) {
 
                     Span span = tracer.spanBuilder(
-                                    mojoExecution.getPlugin().getArtifactId() + ":" + mojoExecution.getGoal() +
+                                     getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
                                             " (" + executionEvent.getMojoExecution().getExecutionId() + ")" +
                                             " @ " + executionEvent.getProject().getArtifactId() + " ")
 
@@ -156,6 +160,24 @@ public class OtelEventSpy extends AbstractEventSpy {
         }
     }
 
+    /**
+     * maven-clean-plugin -> clean
+     * sisu-maven-plugin -> sisu
+     * spotbugs-maven-plugin -> spotbugs
+     *
+     * @param pluginArtifactId
+     * @return
+     */
+    @Nonnull
+    protected String getPluginArtifactIdShortName(@Nonnull String pluginArtifactId) {
+        if (pluginArtifactId.endsWith("-maven-plugin")) {
+            return pluginArtifactId.substring(0, pluginArtifactId.length() - "-maven-plugin".length());
+        } else if (pluginArtifactId.startsWith("maven-") && pluginArtifactId.endsWith("-plugin")) {
+            return pluginArtifactId.substring("maven-".length(), pluginArtifactId.length() - "-plugin".length());
+        } else {
+            return pluginArtifactId;
+        }
+    }
 
     @Override
     public void close() {

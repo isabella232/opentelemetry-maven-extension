@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package co.elastic.maven.semconv;
+package co.elastic.maven.opentelemetry.semconv;
 
 import io.opentelemetry.api.common.AttributeKey;
 

@@ -2,7 +2,7 @@
  * Copyright The Original Author or Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package co.elastic.maven;
+package co.elastic.maven.opentelemetry;
 
 import io.opentelemetry.api.trace.Span;
 import org.apache.maven.model.Plugin;
@@ -10,11 +10,15 @@ import org.apache.maven.plugin.MojoExecution;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Named
+@Singleton
 public class SpanRegistry {
 
     private Span rootSpan;
