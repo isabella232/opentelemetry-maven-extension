@@ -11,12 +11,9 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.exporter.logging.LoggingSpanExporter;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
-import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.context.propagation.TextMapGetter;
 import org.apache.maven.eventspy.AbstractEventSpy;
 import org.apache.maven.eventspy.EventSpy;
 import org.apache.maven.execution.ExecutionEvent;
@@ -26,9 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.Locale;
+import java.util.Map;
 
 @Named
 @Singleton
@@ -41,16 +41,16 @@ public class OtelEventSpy extends AbstractEventSpy {
 
     @Override
     public void init(EventSpy.Context context) throws Exception {
+        // https://github.com/open-telemetry/opentelemetry-java/blob/v1.4.1/sdk-extensions/autoconfigure/README.md#otlp-exporter-both-span-and-metric-exporters
+        String otelExporterOtlpEndpointSysProperty= System.getProperty("otel.exporter.otlp.endpoint");
+        String otelExporterOtlpEndpointEnvVar = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
 
-        String otelExporterOtlpEndpoint = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
-        if (otelExporterOtlpEndpoint == null) {
-            SpanExporter spanExporter = new LoggingSpanExporter();
-            SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build();
-
-            OpenTelemetrySdk.builder().setTracerProvider(sdkTracerProvider).buildAndRegisterGlobal();
-            logger.warn("OpenTelemetry configured with Logging exporter");
+        if (otelExporterOtlpEndpointSysProperty == null && otelExporterOtlpEndpointEnvVar == null) {
+            // see https://github.com/open-telemetry/opentelemetry-java/blob/v1.4.1/sdk-extensions/autoconfigure/README.md#logging-exporter
+            System.setProperty("otel.traces.exporter", "logging");
+            logger.warn("OpenTelemetry configured with Logging exporter"); // FIXME lower logging level
         } else {
-            logger.warn("OpenTelemetry configured with environment variables (OTEL_EXPORTER_OTLP_ENDPOINT: " + otelExporterOtlpEndpoint + "...)");
+            logger.warn("OpenTelemetry configured with environment variables (OTEL_EXPORTER_OTLP_ENDPOINT: " + otelExporterOtlpEndpointEnvVar + "...)"); // FIXME lower logging level
         }
     }
 
@@ -60,11 +60,7 @@ public class OtelEventSpy extends AbstractEventSpy {
 
             if (event instanceof ExecutionEvent) {
                 ExecutionEvent executionEvent = (ExecutionEvent) event;
-
-
                 onExecutionEvent(executionEvent);
-
-
             }
 
         } catch (Throwable t) {
@@ -81,14 +77,28 @@ public class OtelEventSpy extends AbstractEventSpy {
                 break;
             case SessionStarted: {
                 logger.warn("Session started");
-                // TODO handle TRACEPARENT
                 MavenProject currentProject = executionEvent.getSession().getCurrentProject();
-                Span span = tracer.spanBuilder(currentProject.getGroupId() + ":" + currentProject.getArtifactId())
-                        .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, currentProject.getGroupId())
-                        .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, currentProject.getArtifactId())
-                        .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_VERSION, currentProject.getVersion())
-                        .startSpan();
-                spanRegistry.setRootSpan(span);
+                TextMapGetter<Map<String, String>> getter = new TextMapGetter<Map<String, String>>() {
+                    @Override
+                    public Iterable<String> keys(Map<String, String> environmentVariables) {
+                        return environmentVariables.keySet();
+                    }
+
+                    @Nullable
+                    @Override
+                    public String get(@Nullable Map<String, String> environmentVariables, String key) {
+                        return environmentVariables == null ? null : environmentVariables.get(key.toUpperCase(Locale.ROOT));
+                    }
+                };
+                io.opentelemetry.context.Context context = W3CTraceContextPropagator.getInstance().extract(io.opentelemetry.context.Context.current(), System.getenv(), getter);
+                try (Scope scope = context.makeCurrent()) {
+                    Span span = tracer.spanBuilder(currentProject.getGroupId() + ":" + currentProject.getArtifactId())
+                            .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, currentProject.getGroupId())
+                            .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, currentProject.getArtifactId())
+                            .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_VERSION, currentProject.getVersion())
+                            .startSpan();
+                    spanRegistry.setRootSpan(span);
+                }
             }
             break;
             case SessionEnded: {
@@ -117,7 +127,7 @@ public class OtelEventSpy extends AbstractEventSpy {
                 try (Scope scope = rootSpan.makeCurrent()) {
 
                     Span span = tracer.spanBuilder(
-                                     getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
+                                    getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
                                             " (" + executionEvent.getMojoExecution().getExecutionId() + ")" +
                                             " @ " + executionEvent.getProject().getArtifactId() + " ")
 
