@@ -7,12 +7,11 @@
     <groupId>co.elastic.maven</groupId>
     <version>0.1.0-SNAPSHOT</version>
 
-    <artifactId>maven-opentelemetry-extension</artifactId>
+    <artifactId>opentelemetry-maven-extension</artifactId>
     <packaging>jar</packaging>
-    <name>Maven OpenTelemetry Extension</name>
+    <name>OpenTelemetry Maven Extension</name>
     <description>
-        Maven extension injected with "-Dmaven.ext.class.path" to send
-        OpenTelemetry spans
+        Maven extension to observe Maven builds with distributed traces using OpenTelemetry SDK
     </description>
     <properties>
         <java.level>8</java.level>
