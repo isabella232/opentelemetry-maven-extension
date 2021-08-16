@@ -1,15 +1,19 @@
-package co.elastic.maven.opentelemetry.eventspy;
+/*
+ * Copyright The Original Author or Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-import junit.framework.Assert;
+package co.elastic.maven.opentelemetry;
+
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public class OtelEventSpyTest {
+public class OtelExecutionListenerTest {
 
     @Test
     public void getPluginArtifactIdShortName_builtinPluginName() {
-        OtelEventSpy otelEventSpy = new OtelEventSpy();
+        OtelExecutionListener otelEventSpy = new OtelExecutionListener();
         String actual = otelEventSpy.getPluginArtifactIdShortName("maven-clean-plugin");
         String expected  = "clean";
         assertEquals(expected, actual);
@@ -17,7 +21,7 @@ public class OtelEventSpyTest {
 
     @Test
     public void getPluginArtifactIdShortName_thirdPartyPluginName() {
-        OtelEventSpy otelEventSpy = new OtelEventSpy();
+        OtelExecutionListener otelEventSpy = new OtelExecutionListener();
         String actual = otelEventSpy.getPluginArtifactIdShortName("spotbugs-maven-plugin");
         String expected  = "spotbugs";
         assertEquals(expected, actual);

@@ -7,18 +7,16 @@ package co.elastic.maven.opentelemetry;
 import io.opentelemetry.api.trace.Span;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecution;
+import org.codehaus.plexus.component.annotations.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Named;
-import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Named
-@Singleton
+@Component(role = SpanRegistry.class)
 public class SpanRegistry {
 
     private Span rootSpan;

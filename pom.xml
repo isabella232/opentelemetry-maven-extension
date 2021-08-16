@@ -15,7 +15,7 @@
     </description>
     <properties>
         <java.level>8</java.level>
-        <opentelemetry.version>1.4.1</opentelemetry.version>
+        <opentelemetry.version>1.5.0</opentelemetry.version>
     </properties>
 
     <developers>
@@ -28,10 +28,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <scope>provided</scope>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-component-annotations</artifactId>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -81,11 +80,13 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-trace</artifactId>
         </dependency>
+        <!--
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
             <version>${opentelemetry.version}-alpha</version>
         </dependency>
+        -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -103,31 +104,6 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-extension-resources</artifactId>
-        </dependency>
-        <dependency>
-            <! - - authentication header... - - >
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp-metrics</artifactId>
-            <version>${opentelemetry.version}-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-metrics</artifactId>
-            <version>${opentelemetry.version}-alpha</version>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>junit</groupId>
@@ -154,7 +130,7 @@
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-bom</artifactId>
-                <version>1.38.0</version>
+                <version>1.39.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -200,14 +176,14 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>sisu-maven-plugin</artifactId>
-                <version>1.4</version>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-metadata</artifactId>
+                <version>2.1.0</version>
                 <executions>
                     <execution>
-                        <id>generate-index</id>
                         <goals>
-                            <goal>main-index</goal>
+                            <goal>generate-metadata</goal>
+                            <goal>generate-test-metadata</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -222,6 +198,15 @@
                 </configuration>
             </plugin>
         </plugins>
+        <extensions>
+            <!--
+            <extension>
+                <groupId>co.elastic.maven</groupId>
+                <artifactId>opentelemetry-maven-extension</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </extension>
+            -->
+        </extensions>
     </build>
     <licenses>
         <license>

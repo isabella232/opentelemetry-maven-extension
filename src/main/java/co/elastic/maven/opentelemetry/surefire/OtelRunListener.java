@@ -9,19 +9,20 @@ import co.elastic.maven.opentelemetry.SpanRegistry;
 import org.apache.maven.surefire.report.ReportEntry;
 import org.apache.maven.surefire.report.RunListener;
 import org.apache.maven.surefire.report.TestSetReportEntry;
+import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
 
 /**
  * FIXME how to register this listener?
  */
+@Component(role = OtelRunListener.class)
 public class OtelRunListener implements RunListener {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @Inject
+    @Requirement
     private SpanRegistry spanRegistry;
 
     @Override
