@@ -42,7 +42,14 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Close the OpenTelemetry SDK (see {@link OpenTelemetrySdkService#close()} on the end of execution of the last project 
+ * ({@link #projectSucceeded(ExecutionEvent)} and {@link #projectFailed(ExecutionEvent)}) rather than on the end of the 
+ * Maven session  {@link #sessionEnded(ExecutionEvent)} because OpenTelemetry & GRPC classes are unloaded by the Maven 
+ * classloader before {@link #sessionEnded(ExecutionEvent)} causing {@link NoClassDefFoundError} messages in the logs.
+ */
 @Component(role = ExecutionListener.class, hint = "otel-execution-listener")
 public class OtelExecutionListener extends AbstractExecutionListener {
 
@@ -54,12 +61,78 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Requirement
     private OpenTelemetrySdkService openTelemetrySdkService;
 
+    private final AtomicInteger projectsCounter = new AtomicInteger();
+
+    @Override
+    public void projectStarted(ExecutionEvent executionEvent) {
+        MavenProject project = executionEvent.getProject();
+        TextMapGetter<Map<String, String>> getter = new TextMapGetter<Map<String, String>>() {
+            @Override
+            public Iterable<String> keys(Map<String, String> environmentVariables) {
+                return environmentVariables.keySet();
+            }
+
+            @Nullable
+            @Override
+            public String get(@Nullable Map<String, String> environmentVariables, String key) {
+                return environmentVariables == null ? null : environmentVariables.get(key.toUpperCase(Locale.ROOT));
+            }
+        };
+        io.opentelemetry.context.Context context = W3CTraceContextPropagator.getInstance().extract(io.opentelemetry.context.Context.current(), System.getenv(), getter);
+        try (Scope scope = context.makeCurrent()) {
+            final String spanName = project.getGroupId() + ":" + project.getArtifactId();
+            logger.debug("Start project span {}", spanName);
+            Span span = this.openTelemetrySdkService.getTracer().spanBuilder(spanName)
+                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, project.getGroupId())
+                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, project.getArtifactId())
+                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_VERSION, project.getVersion())
+                    .startSpan();
+            // FIXME support multi module projects
+            spanRegistry.setRootSpan(span);
+        }
+        projectsCounter.incrementAndGet();
+    }
+
+    @Override
+    public void projectSucceeded(ExecutionEvent executionEvent) {
+        try {
+            logger.debug("End succeeded project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
+            spanRegistry.removeRootSpan().end();
+        } finally {
+            final int projectsCount = projectsCounter.decrementAndGet();
+            if (projectsCount == 0) {
+                logger.debug("Close openTelemetrySdkService...");
+                try {
+                    this.openTelemetrySdkService.close();
+                } catch (IOException e) {
+                    logger.warn("Silently ignore exception shutting down OpenTelemetry service", e);
+                }
+                logger.debug("OpenTelemetrySdkService closed");
+            }
+        }
+    }
+
     @Override
     public void projectFailed(ExecutionEvent executionEvent) {
-        final Span span = spanRegistry.removeRootSpan();
-        span.setStatus(StatusCode.ERROR);
-        span.recordException(executionEvent.getException());
-        span.end();
+        try {
+            logger.debug("End failed project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
+            final Span span = spanRegistry.removeRootSpan();
+            span.setStatus(StatusCode.ERROR);
+            span.recordException(executionEvent.getException());
+            span.end();
+
+        } finally {
+            final int projectsCount = projectsCounter.decrementAndGet();
+            if (projectsCount == 0) {
+                logger.debug("Close openTelemetrySdkService...");
+                try {
+                    this.openTelemetrySdkService.close();
+                } catch (IOException e) {
+                    logger.warn("Silently ignore exception shutting down OpenTelemetry service", e);
+                }
+                logger.debug("OpenTelemetrySdkService closed");
+            }
+        }
     }
 
     @Override
@@ -70,10 +143,12 @@ public class OtelExecutionListener extends AbstractExecutionListener {
         Span rootSpan = spanRegistry.getRootSpan();
         try (Scope scope = rootSpan.makeCurrent()) {
 
+            final String spanName = getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
+                    " (" + executionEvent.getMojoExecution().getExecutionId() + ")" +
+                    " @ " + executionEvent.getProject().getArtifactId();
+            logger.debug("Start mojo execution span {}", spanName);
             Span span = this.openTelemetrySdkService.getTracer().spanBuilder(
-                            getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
-                                    " (" + executionEvent.getMojoExecution().getExecutionId() + ")" +
-                                    " @ " + executionEvent.getProject().getArtifactId() + " ")
+                            spanName)
 
                     .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, executionEvent.getProject().getGroupId())
                     .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, executionEvent.getProject().getArtifactId())
@@ -93,6 +168,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Override
     public void mojoSucceeded(ExecutionEvent executionEvent) {
         MojoExecution mojoExecution = executionEvent.getMojoExecution();
+        logger.debug("End succeeded mojo execution span {}", mojoExecution);
         Span mojoExecutionSpan = spanRegistry.removeSpan(mojoExecution);
         mojoExecutionSpan.setStatus(StatusCode.OK);
 
@@ -102,63 +178,24 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Override
     public void mojoFailed(ExecutionEvent executionEvent) {
         MojoExecution mojoExecution = executionEvent.getMojoExecution();
+        logger.debug("End failed mojo execution span {}", mojoExecution);
         Span mojoExecutionSpan = spanRegistry.removeSpan(mojoExecution);
         mojoExecutionSpan.setStatus(StatusCode.ERROR, "Mojo Failed"); // TODO verify description
         mojoExecutionSpan.end();
     }
 
     @Override
-    public void projectStarted(ExecutionEvent executionEvent) {
-        logger.warn("project started");
-        MavenProject currentProject = executionEvent.getProject();
-        TextMapGetter<Map<String, String>> getter = new TextMapGetter<Map<String, String>>() {
-            @Override
-            public Iterable<String> keys(Map<String, String> environmentVariables) {
-                return environmentVariables.keySet();
-            }
-
-            @Nullable
-            @Override
-            public String get(@Nullable Map<String, String> environmentVariables, String key) {
-                return environmentVariables == null ? null : environmentVariables.get(key.toUpperCase(Locale.ROOT));
-            }
-        };
-        io.opentelemetry.context.Context context = W3CTraceContextPropagator.getInstance().extract(io.opentelemetry.context.Context.current(), System.getenv(), getter);
-        try (Scope scope = context.makeCurrent()) {
-            Span span = this.openTelemetrySdkService.getTracer().spanBuilder(currentProject.getGroupId() + ":" + currentProject.getArtifactId())
-                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, currentProject.getGroupId())
-                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, currentProject.getArtifactId())
-                    .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_VERSION, currentProject.getVersion())
-                    .startSpan();
-            spanRegistry.setRootSpan(span);
-        }
-    }
-
-    @Override
-    public void projectSucceeded(ExecutionEvent event) {
-        spanRegistry.removeRootSpan().end();
-    }
-
-    @Override
     public void sessionEnded(ExecutionEvent event) {
-        logger.info("sessionEnded, close openTelemetrySdkService...");
-        try {
-            this.openTelemetrySdkService.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        logger.info("sessionEnded, openTelemetrySdkService closed");
-
+        logger.debug("Maven session ended");
     }
-
 
     /**
      * maven-clean-plugin -> clean
      * sisu-maven-plugin -> sisu
      * spotbugs-maven-plugin -> spotbugs
      *
-     * @param pluginArtifactId
-     * @return
+     * @param pluginArtifactId the artifact ID of the mojo {@link MojoExecution#getArtifactId()}
+     * @return shortened name
      */
     @Nonnull
     protected String getPluginArtifactIdShortName(@Nonnull String pluginArtifactId) {
@@ -172,6 +209,10 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     }
 
 
+    /**
+     * Register in given {@link OtelExecutionListener} to the lifecycle of the given {@link MavenSession} 
+     * @see org.apache.maven.execution.MavenExecutionRequest#setExecutionListener(ExecutionListener)
+     */
     public static void registerOtelExecutionListener(@Nonnull MavenSession session, @Nonnull OtelExecutionListener otelExecutionListener) {
         final ExecutionListener initialExecutionListener = session.getRequest().getExecutionListener();
         if (initialExecutionListener instanceof ChainedExecutionListener) {

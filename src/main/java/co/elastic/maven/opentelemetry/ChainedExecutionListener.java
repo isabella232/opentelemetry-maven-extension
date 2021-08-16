@@ -14,6 +14,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 
+/**
+ * Util class to chain multiple {@link ExecutionListener} as MAven APIs don't offer this capability.
+ */
 public class ChainedExecutionListener implements ExecutionListener {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

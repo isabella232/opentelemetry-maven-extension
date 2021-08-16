@@ -44,7 +44,7 @@ public class OtelMojo extends AbstractMojo {
     private String headers;
 
     @Parameter(property = "otel.timeout")
-    private int timeout;
+    private long timeout;
 
     /**
      * See https://github.com/socram8888/ascii-banner-maven-plugin/blob/c8d8d471ce6fbe74e12df4b374bf5f755bd12ee5/src/main/java/pet/orca/maven/asciibanner/AsciiBannerSetupMojo.java
@@ -71,7 +71,7 @@ public class OtelMojo extends AbstractMojo {
             properties.setProperty("otel.exporter.otlp.headers", this.headers);
         }
         if (timeout != 0) {
-            properties.setProperty("otel.exporter.otlp.timeout", Integer.toString(this.timeout));
+            properties.setProperty("otel.exporter.otlp.timeout", Long.toString(this.timeout));
         }
 
         OtelExecutionListener.registerOtelExecutionListener(mavenSession, this.otelExecutionListener);

@@ -16,6 +16,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Holds the state of the spans in progress
+ * FIXME support multi module projects
+ */
 @Component(role = SpanRegistry.class)
 public class SpanRegistry {
 
@@ -71,7 +75,7 @@ public class SpanRegistry {
      */
     public void setRootSpan(@Nonnull Span rootSpan) throws IllegalStateException {
         if (this.rootSpan != null) {
-            throw new IllegalStateException("Root span already defined");
+            throw new IllegalStateException("Root span already defined " + this.rootSpan);
         }
         this.rootSpan = rootSpan;
     }

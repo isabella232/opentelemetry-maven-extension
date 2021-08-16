@@ -18,7 +18,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.maven.rtinfo.RuntimeInformation;
@@ -34,6 +34,14 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Service to configure the {@link OpenTelemetry} instance.
+ *
+ * Mimic the {@link <a href="https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure">OpenTelemetry SDK Autoconfigure</a>}
+ * that could not be used as is due to class loading issues when declaring the Maven OpenTelemetry extension using the pom.xml {@code <extension>} declaration.
+ *
+ * Exception example: https://gist.github.com/cyrille-leclerc/57903e63d1f162969154eec3bb82a576
+ */
 @Component(role = OpenTelemetrySdkService.class, hint = "opentelemetry-service")
 public class OpenTelemetrySdkService implements Closeable {
 
@@ -45,6 +53,8 @@ public class OpenTelemetrySdkService implements Closeable {
     private OpenTelemetrySdk openTelemetrySdk;
 
     private Tracer tracer;
+
+    private SpanExporter spanExporter;
 
     public synchronized Tracer getTracer() {
         if (tracer == null) {
@@ -70,13 +80,12 @@ public class OpenTelemetrySdkService implements Closeable {
                     spanExporterBuilder.setTimeout(Duration.ofMillis(Long.parseLong(otlpExporterTimeoutMillis)));
                 }
 
-                SpanExporter spanExporter = spanExporterBuilder.build();
+                this.spanExporter = spanExporterBuilder.build();
 
+                // OTEL_RESOURCE_ATTRIBUTES
                 AttributesBuilder resourceAttributes = Attributes.builder();
                 Resource mavenResource = getMavenResource();
                 resourceAttributes.putAll(mavenResource.getAttributes());
-
-                // OTEL_RESOURCE_ATTRIBUTES
                 String otelResourceAttributesAsString = System.getProperty("otel.resource.attributes",
                         System.getenv("OTEL_RESOURCE_ATTRIBUTES"));
                 if (StringUtils.isNotBlank(otelResourceAttributesAsString)) {
@@ -85,12 +94,11 @@ public class OpenTelemetrySdkService implements Closeable {
                     otelResourceAttributes.forEach(resourceAttributes::put);
                 }
 
+                final BatchSpanProcessor batchSpanProcessor = BatchSpanProcessor.builder(spanExporter).build();
                 SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
                         .setResource(Resource.create(resourceAttributes.build()))
-                        .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
+                        .addSpanProcessor(batchSpanProcessor)
                         .build();
-
-                // TODO OTEL_PROPAGATORS otel.propagators https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure#propagator
 
                 this.openTelemetrySdk = OpenTelemetrySdk.builder()
                         .setTracerProvider(sdkTracerProvider)
@@ -105,7 +113,7 @@ public class OpenTelemetrySdkService implements Closeable {
     /**
      * Don't use a {@code io.opentelemetry.sdk.autoconfigure.spi.ResourceProvider} due to classloading issue when loading
      * the Maven OpenTelemetry extension as a pom.xml {@code <extension>}.
-     * See https://gist.github.com/cyrille-leclerc/2694ce214b7f95b38e1dab02dc36390d
+     * See exception https://gist.github.com/cyrille-leclerc/2694ce214b7f95b38e1dab02dc36390d
      */
     protected @Nonnull
     Resource getMavenResource() {
@@ -115,19 +123,30 @@ public class OpenTelemetrySdkService implements Closeable {
     }
 
     /**
-     * See https://gist.github.com/cyrille-leclerc/57903e63d1f162969154eec3bb82a576
-     *
-     * @throws IOException
+     * See
      */
     @Override
     public void close() throws IOException {
         if (this.openTelemetrySdk != null) {
             logger.info("Shutdown OTLP exporter...");
             long before = System.currentTimeMillis();
-            final CompletableResultCode completableResultCode = this.openTelemetrySdk.getSdkTracerProvider().shutdown();
+            final CompletableResultCode sdkProviderShutdown = this.openTelemetrySdk.getSdkTracerProvider().shutdown();
+            sdkProviderShutdown.join(10, TimeUnit.SECONDS);
+            if (sdkProviderShutdown.isSuccess()) {
+                logger.info("OTLP exporter shut down in " + (System.currentTimeMillis() - before) + " ms");
+            } else {
+                logger.warn("Failure to shut down OTLP exporter shut down in " + (System.currentTimeMillis() - before) + " ms, done: " + sdkProviderShutdown.isDone() + " success: " + sdkProviderShutdown.isSuccess());
+            }
 
-            completableResultCode.join(10, TimeUnit.SECONDS);
-            logger.info("OTLP exporter shut down in " + (System.currentTimeMillis() - before) + " ms, done: " + completableResultCode.isDone() + " success: " + completableResultCode.isSuccess());
+            // FIXME try to fix the java.lang.NoClassDefFoundError happening after the Maven
+            logger.info("Shutdown OTLP span exporter...");
+            final CompletableResultCode spanExporterShutDown = spanExporter.shutdown();
+            spanExporterShutDown.join(10, TimeUnit.SECONDS);
+            if (spanExporterShutDown.isSuccess()) {
+                logger.info("OTLP span exporter shut down in " + (System.currentTimeMillis() - before) + " ms");
+            } else {
+                logger.warn("Failure to shut down OTLP span exporter shut down in " + (System.currentTimeMillis() - before) + " ms, done: " + spanExporterShutDown.isDone() + " success: " + spanExporterShutDown.isSuccess());
+            }
         }
     }
 }
