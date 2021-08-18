@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export OPEN_TELEMETRY_COLLECTOR_VERSION=0.29.0
+export OPEN_TELEMETRY_COLLECTOR_VERSION=0.30.0
 export OPEN_TELEMETRY_COLLECTOR_PLATFORM="darwin_amd64"
 
 
@@ -67,4 +67,4 @@ echo "################################"
 echo ""
 echo "OTEL_EXPORTER_OTLP_ENDPOINT: $OTEL_EXPORTER_OTLP_ENDPOINT"
 
-$OPEN_TELEMETRY_COLLECTOR --config $PRGDIR/opentelemetry-collector-exporter-elastic.yaml
+$OPEN_TELEMETRY_COLLECTOR --config $PRGDIR/opentelemetry-collector.yaml

@@ -46,7 +46,7 @@ service:
       processors:
         - batch
       exporters:
-        #- otlp/elastic
+        - otlp/elastic
         - jaeger
         - logging
   extensions: [zpages]
