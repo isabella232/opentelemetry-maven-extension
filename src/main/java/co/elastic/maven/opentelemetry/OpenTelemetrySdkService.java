@@ -5,7 +5,6 @@
 
 package co.elastic.maven.opentelemetry;
 
-import io.grpc.ManagedChannel;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -31,7 +30,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
