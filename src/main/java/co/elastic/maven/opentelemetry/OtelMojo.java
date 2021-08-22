@@ -5,10 +5,7 @@
 
 package co.elastic.maven.opentelemetry;
 
-import co.elastic.maven.opentelemetry.eventspy.OtelEventSpy;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.eventspy.EventSpy;
-import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -21,7 +18,6 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Properties;
 
 /**
