@@ -31,6 +31,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,6 +62,7 @@ public class OpenTelemetrySdkService implements Closeable {
             String otlpEndpoint = System.getProperty("otel.exporter.otlp.endpoint",
                     System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"));
             if (StringUtils.isBlank(otlpEndpoint)) {
+                logger.debug("No -Dotel.exporter.otlp.endpoint property or OTEL_EXPORTER_OTLP_ENDPOINT environment variable found, use a NOOP tracer");
                 GlobalOpenTelemetry.set(OpenTelemetry.noop());
             } else {
                 // OtlpGrpcSpanExporterBuilder spanExporterBuilder = OtlpGrpcSpanExporter.builder();
@@ -77,7 +79,11 @@ public class OpenTelemetrySdkService implements Closeable {
                 String otlpExporterTimeoutMillis = System.getProperty("otel.exporter.otlp.timeout",
                         System.getenv("OTEL_EXPORTER_OTLP_TIMEOUT"));
                 if (StringUtils.isNotBlank(otlpExporterTimeoutMillis)) {
-                    spanExporterBuilder.setTimeout(Duration.ofMillis(Long.parseLong(otlpExporterTimeoutMillis)));
+                    try {
+                        spanExporterBuilder.setTimeout(Duration.ofMillis(Long.parseLong(otlpExporterTimeoutMillis)));
+                    } catch (NumberFormatException e) {
+                        logger.warn("Skip invalid OTLP timeout " + otlpExporterTimeoutMillis, e);
+                    }
                 }
 
                 this.spanExporter = spanExporterBuilder.build();
@@ -93,6 +99,8 @@ public class OpenTelemetrySdkService implements Closeable {
                     // see io.opentelemetry.sdk.autoconfigure.EnvironmentResource.getAttributes
                     otelResourceAttributes.forEach(resourceAttributes::put);
                 }
+
+                logger.debug("Export OpenTelemetry traces to {} with attributes: {}", otlpEndpoint, StringUtils.defaultIfBlank(otelResourceAttributesAsString, ""));
 
                 final BatchSpanProcessor batchSpanProcessor = BatchSpanProcessor.builder(spanExporter).build();
                 SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()

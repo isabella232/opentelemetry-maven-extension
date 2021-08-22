@@ -9,8 +9,6 @@ public class StringUtils {
 
     /**
      * Copy org.apache.commons.lang3.StringUtils#isBlank(java.lang.CharSequence)
-     * @param cs
-     * @return
      */
     public static boolean isBlank(final CharSequence cs) {
         int strLen;
@@ -25,7 +23,17 @@ public class StringUtils {
         return true;
     }
 
+    /**
+     * Copy org.apache.commons.lang3.StringUtils#isNotBlank(java.lang.CharSequence)
+     */
     public static boolean isNotBlank(final CharSequence cs) {
         return !isBlank(cs);
+    }
+
+    /**
+     * Copy org.apache.commons.lang3.StringUtils#defaultIfBlank(java.lang.CharSequence, java.lang.CharSequence)
+     */
+    public static <T extends CharSequence> T defaultIfBlank(final T str, final T defaultStr) {
+        return isBlank(str) ? defaultStr : str;
     }
 }
