@@ -5,6 +5,7 @@
 
 package co.elastic.maven.opentelemetry;
 
+import io.grpc.ManagedChannel;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -12,8 +13,6 @@ import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.resources.Resource;
@@ -64,7 +63,8 @@ public class OpenTelemetrySdkService implements Closeable {
             if (StringUtils.isBlank(otlpEndpoint)) {
                 GlobalOpenTelemetry.set(OpenTelemetry.noop());
             } else {
-                OtlpGrpcSpanExporterBuilder spanExporterBuilder = OtlpGrpcSpanExporter.builder();
+                // OtlpGrpcSpanExporterBuilder spanExporterBuilder = OtlpGrpcSpanExporter.builder();
+                MyOtlpGrpcSpanExporterBuilder spanExporterBuilder = MyOtlpGrpcSpanExporter.builder();
                 spanExporterBuilder.setEndpoint(otlpEndpoint);
 
                 // OTEL_EXPORTER_OTLP_HEADERS
@@ -122,31 +122,21 @@ public class OpenTelemetrySdkService implements Closeable {
         return Resource.create(attributes);
     }
 
-    /**
-     * See
-     */
     @Override
     public void close() throws IOException {
         if (this.openTelemetrySdk != null) {
-            logger.info("Shutdown OTLP exporter...");
+            logger.info("Shutdown SDK Trace Provider...");
             long before = System.currentTimeMillis();
             final CompletableResultCode sdkProviderShutdown = this.openTelemetrySdk.getSdkTracerProvider().shutdown();
             sdkProviderShutdown.join(10, TimeUnit.SECONDS);
             if (sdkProviderShutdown.isSuccess()) {
-                logger.info("OTLP exporter shut down in " + (System.currentTimeMillis() - before) + " ms");
+                logger.info("SDK Trace Provider shutdown in " + (System.currentTimeMillis() - before) + " ms");
             } else {
-                logger.warn("Failure to shut down OTLP exporter shut down in " + (System.currentTimeMillis() - before) + " ms, done: " + sdkProviderShutdown.isDone() + " success: " + sdkProviderShutdown.isSuccess());
+                logger.warn("Failure to shutdown SDK Trace Provider in " + (System.currentTimeMillis() - before) + " ms, done: " + sdkProviderShutdown.isDone() + " success: " + sdkProviderShutdown.isSuccess());
             }
-
-            // FIXME try to fix the java.lang.NoClassDefFoundError happening after the Maven
-            logger.info("Shutdown OTLP span exporter...");
-            final CompletableResultCode spanExporterShutDown = spanExporter.shutdown();
-            spanExporterShutDown.join(10, TimeUnit.SECONDS);
-            if (spanExporterShutDown.isSuccess()) {
-                logger.info("OTLP span exporter shut down in " + (System.currentTimeMillis() - before) + " ms");
-            } else {
-                logger.warn("Failure to shut down OTLP span exporter shut down in " + (System.currentTimeMillis() - before) + " ms, done: " + spanExporterShutDown.isDone() + " success: " + spanExporterShutDown.isSuccess());
-            }
+            // fix https://github.com/cyrille-leclerc/opentelemetry-maven-extension/issues/1
+            // working around https://github.com/open-telemetry/opentelemetry-java/issues/3521
+            this.spanExporter.close();
         }
     }
 }
