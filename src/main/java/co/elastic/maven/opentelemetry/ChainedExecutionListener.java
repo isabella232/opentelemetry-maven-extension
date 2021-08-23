@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 /**
  * Util class to chain multiple {@link ExecutionListener} as MAven APIs don't offer this capability.
@@ -26,8 +27,12 @@ public class ChainedExecutionListener implements ExecutionListener {
         this.listeners = new LinkedList<>();
     }
 
+    /**
+     *
+     * @param listeners {@code null} values are filtered
+     */
     public ChainedExecutionListener(ExecutionListener... listeners) {
-        this.listeners = new LinkedList<>(Arrays.asList(listeners));
+        this.listeners =  Arrays.asList(listeners).stream().filter(e -> e != null).collect(Collectors.toList());
     }
 
     @Override
@@ -132,10 +137,14 @@ public class ChainedExecutionListener implements ExecutionListener {
     @Override
     public void mojoSucceeded(ExecutionEvent event) {
         for (ExecutionListener listener : this.listeners) {
-            try {
-                listener.mojoSucceeded(event);
-            } catch (RuntimeException e) {
-                logger.error("Silently skip exception", e);
+            if (listener == null) {
+                logger.warn("Silently ignore 'null' listener");
+            } else {
+                try {
+                    listener.mojoSucceeded(event);
+                } catch (RuntimeException e) {
+                    logger.error("Silently skip exception", e);
+                }
             }
         }
     }

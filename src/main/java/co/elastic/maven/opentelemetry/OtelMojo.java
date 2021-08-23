@@ -5,7 +5,6 @@
 
 package co.elastic.maven.opentelemetry;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -19,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * See https://github.com/socram8888/ascii-banner-maven-plugin/blob/c8d8d471ce6fbe74e12df4b374bf5f755bd12ee5/src/main/java/pet/orca/maven/asciibanner/AsciiBannerSetupMojo.java
@@ -72,6 +72,6 @@ public class OtelMojo extends AbstractMojo {
 
         OtelExecutionListener.registerOtelExecutionListener(mavenSession, this.otelExecutionListener);
 
-        logger.warn("Set properties " + properties);
+        logger.debug("OpenTelemetry: configuration: " + properties.entrySet().stream().map(e-> e.getKey() + ": " + e.getValue()).collect(Collectors.joining(", ")));
     }
 }

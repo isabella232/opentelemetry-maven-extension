@@ -131,14 +131,14 @@ public class OpenTelemetrySdkService implements Closeable {
     @Override
     public void close() throws IOException {
         if (this.openTelemetrySdk != null) {
-            logger.info("Shutdown SDK Trace Provider...");
+            logger.debug("OpenTelemetry: Shutdown SDK Trace Provider...");
             long before = System.currentTimeMillis();
             final CompletableResultCode sdkProviderShutdown = this.openTelemetrySdk.getSdkTracerProvider().shutdown();
             sdkProviderShutdown.join(10, TimeUnit.SECONDS);
             if (sdkProviderShutdown.isSuccess()) {
-                logger.info("SDK Trace Provider shutdown in " + (System.currentTimeMillis() - before) + " ms");
+                logger.debug("OpenTelemetry: SDK Trace Provider shutdown in " + (System.currentTimeMillis() - before) + " ms");
             } else {
-                logger.warn("Failure to shutdown SDK Trace Provider in " + (System.currentTimeMillis() - before) + " ms, done: " + sdkProviderShutdown.isDone() + " success: " + sdkProviderShutdown.isSuccess());
+                logger.warn("OpenTelemetry: Failure to shutdown SDK Trace Provider in " + (System.currentTimeMillis() - before) + " ms, done: " + sdkProviderShutdown.isDone() + " success: " + sdkProviderShutdown.isSuccess());
             }
             // fix https://github.com/cyrille-leclerc/opentelemetry-maven-extension/issues/1
             // working around https://github.com/open-telemetry/opentelemetry-java/issues/3521

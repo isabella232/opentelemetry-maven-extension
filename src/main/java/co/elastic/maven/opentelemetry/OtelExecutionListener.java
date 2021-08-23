@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -61,8 +62,6 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Requirement
     private OpenTelemetrySdkService openTelemetrySdkService;
 
-    private final AtomicInteger projectsCounter = new AtomicInteger();
-
     @Override
     public void projectStarted(ExecutionEvent executionEvent) {
         MavenProject project = executionEvent.getProject();
@@ -81,7 +80,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
         io.opentelemetry.context.Context context = W3CTraceContextPropagator.getInstance().extract(io.opentelemetry.context.Context.current(), System.getenv(), getter);
         try (Scope scope = context.makeCurrent()) {
             final String spanName = project.getGroupId() + ":" + project.getArtifactId();
-            logger.debug("Start project span {}", spanName);
+            logger.debug("OpenTelemetry: Start project span {}", spanName);
             Span span = this.openTelemetrySdkService.getTracer().spanBuilder(spanName)
                     .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, project.getGroupId())
                     .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_ARTIFACT_ID, project.getArtifactId())
@@ -90,49 +89,21 @@ public class OtelExecutionListener extends AbstractExecutionListener {
             // FIXME support multi module projects
             spanRegistry.setRootSpan(span);
         }
-        projectsCounter.incrementAndGet();
     }
 
     @Override
     public void projectSucceeded(ExecutionEvent executionEvent) {
-        try {
-            logger.debug("End succeeded project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
-            spanRegistry.removeRootSpan().end();
-        } finally {
-            final int projectsCount = projectsCounter.decrementAndGet();
-            if (projectsCount == 0) {
-                logger.debug("Close openTelemetrySdkService...");
-                try {
-                    this.openTelemetrySdkService.close();
-                } catch (IOException e) {
-                    logger.warn("Silently ignore exception shutting down OpenTelemetry service", e);
-                }
-                logger.debug("OpenTelemetrySdkService closed");
-            }
-        }
+        logger.debug("OpenTelemetry: End succeeded project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
+        spanRegistry.removeRootSpan().end();
     }
 
     @Override
     public void projectFailed(ExecutionEvent executionEvent) {
-        try {
-            logger.debug("End failed project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
-            final Span span = spanRegistry.removeRootSpan();
-            span.setStatus(StatusCode.ERROR);
-            span.recordException(executionEvent.getException());
-            span.end();
-
-        } finally {
-            final int projectsCount = projectsCounter.decrementAndGet();
-            if (projectsCount == 0) {
-                logger.debug("Close openTelemetrySdkService...");
-                try {
-                    this.openTelemetrySdkService.close();
-                } catch (IOException e) {
-                    logger.warn("Silently ignore exception shutting down OpenTelemetry service", e);
-                }
-                logger.debug("OpenTelemetrySdkService closed");
-            }
-        }
+        logger.debug("OpenTelemetry: End failed project span {}:{}", executionEvent.getProject().getArtifactId(), executionEvent.getProject().getArtifactId());
+        final Span span = spanRegistry.removeRootSpan();
+        span.setStatus(StatusCode.ERROR);
+        span.recordException(executionEvent.getException());
+        span.end();
     }
 
     @Override
@@ -146,7 +117,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
             final String spanName = getPluginArtifactIdShortName(mojoExecution.getArtifactId()) + ":" + mojoExecution.getGoal() +
                     " (" + executionEvent.getMojoExecution().getExecutionId() + ")" +
                     " @ " + executionEvent.getProject().getArtifactId();
-            logger.debug("Start mojo execution span {}", spanName);
+            logger.debug("OpenTelemetry: Start mojo execution span {}", spanName);
             Span span = this.openTelemetrySdkService.getTracer().spanBuilder(
                             spanName)
 
@@ -168,7 +139,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Override
     public void mojoSucceeded(ExecutionEvent executionEvent) {
         MojoExecution mojoExecution = executionEvent.getMojoExecution();
-        logger.debug("End succeeded mojo execution span {}", mojoExecution);
+        logger.debug("OpenTelemetry: End succeeded mojo execution span {}", mojoExecution);
         Span mojoExecutionSpan = spanRegistry.removeSpan(mojoExecution);
         mojoExecutionSpan.setStatus(StatusCode.OK);
 
@@ -178,7 +149,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Override
     public void mojoFailed(ExecutionEvent executionEvent) {
         MojoExecution mojoExecution = executionEvent.getMojoExecution();
-        logger.debug("End failed mojo execution span {}", mojoExecution);
+        logger.debug("OpenTelemetry: End failed mojo execution span {}", mojoExecution);
         Span mojoExecutionSpan = spanRegistry.removeSpan(mojoExecution);
         mojoExecutionSpan.setStatus(StatusCode.ERROR, "Mojo Failed"); // TODO verify description
         mojoExecutionSpan.end();
@@ -187,6 +158,14 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     @Override
     public void sessionEnded(ExecutionEvent event) {
         logger.debug("Maven session ended");
+        try {
+            logger.debug("OpenTelemetry ExecutionListener: Close OpenTelemetrySDK service...");
+            long before = System.nanoTime();
+            this.openTelemetrySdkService.close();
+            logger.debug("OpenTelemetrySDK service shutdown in " + Duration.ofNanos(System.nanoTime() - before).toMillis() + "ms");
+        } catch (IOException e) {
+            logger.warn("OpenTelemetry: Silently ignore exception shutting down OpenTelemetry service", e);
+        }
     }
 
     /**
@@ -214,14 +193,14 @@ public class OtelExecutionListener extends AbstractExecutionListener {
      * @see org.apache.maven.execution.MavenExecutionRequest#setExecutionListener(ExecutionListener)
      */
     public static void registerOtelExecutionListener(@Nonnull MavenSession session, @Nonnull OtelExecutionListener otelExecutionListener) {
-        final ExecutionListener initialExecutionListener = session.getRequest().getExecutionListener();
+        @Nullable
+        ExecutionListener initialExecutionListener = session.getRequest().getExecutionListener();
         if (initialExecutionListener instanceof ChainedExecutionListener) {
             // already initialized
+            LoggerFactory.getLogger(OtelExecutionListener.class).debug("OpenTelemetry: OpenTelemetry extension already registered as execution listener, skip.");
         } else {
             session.getRequest().setExecutionListener(new ChainedExecutionListener(otelExecutionListener, initialExecutionListener));
-            LoggerFactory.getLogger(OtelExecutionListener.class).info("initialize - initialExecutionListener: " + initialExecutionListener);
+            LoggerFactory.getLogger(OtelExecutionListener.class).debug("OpenTelemetry: OpenTelemetry extension registered as execution listener. InitialExecutionListener: " + initialExecutionListener);
         }
     }
-
-
 }
