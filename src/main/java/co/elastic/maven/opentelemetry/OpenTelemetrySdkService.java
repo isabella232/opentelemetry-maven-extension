@@ -54,6 +54,9 @@ public class OpenTelemetrySdkService implements Closeable {
 
     private SpanExporter spanExporter;
 
+    /**
+     * TODO add support for `OTEL_EXPORTER_OTLP_CERTIFICATE`
+     */
     public synchronized Tracer getTracer() {
         if (tracer == null) {
             // OTEL_EXPORTER_OTLP_ENDPOINT
