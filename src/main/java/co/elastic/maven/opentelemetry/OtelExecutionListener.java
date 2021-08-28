@@ -79,7 +79,7 @@ public class OtelExecutionListener extends AbstractExecutionListener {
         };
         io.opentelemetry.context.Context context = W3CTraceContextPropagator.getInstance().extract(io.opentelemetry.context.Context.current(), System.getenv(), getter);
         try (Scope scope = context.makeCurrent()) {
-            final String spanName = "Maven session: " + project.getGroupId() + ":" + project.getArtifactId(); // find better name
+            final String spanName = "Build: " + project.getGroupId() + ":" + project.getArtifactId(); // TODO find better name
             logger.debug("OpenTelemetry: Start session span: {}", spanName);
             Span span = this.openTelemetrySdkService.getTracer().spanBuilder(spanName)
                     .setAttribute(MavenOtelSemanticAttributes.MAVEN_PROJECT_GROUP_ID, project.getGroupId())
@@ -174,14 +174,6 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     public void sessionEnded(ExecutionEvent event) {
         logger.debug("OpenTelemetry: Maven session ended");
         spanRegistry.removeRootSpan().end();
-        try {
-            logger.debug("OpenTelemetry ExecutionListener: Close OpenTelemetrySDK service...");
-            long before = System.nanoTime();
-            this.openTelemetrySdkService.close();
-            logger.debug("OpenTelemetrySDK service shutdown in " + Duration.ofNanos(System.nanoTime() - before).toMillis() + "ms");
-        } catch (IOException e) {
-            logger.warn("OpenTelemetry: Silently ignore exception shutting down OpenTelemetry service", e);
-        }
     }
 
     /**

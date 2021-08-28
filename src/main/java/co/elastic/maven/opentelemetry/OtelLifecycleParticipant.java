@@ -25,28 +25,23 @@ public class OtelLifecycleParticipant extends AbstractMavenLifecycleParticipant 
     @Requirement(role = ExecutionListener.class, hint = "otel-execution-listener")
     private OtelExecutionListener otelExecutionListener;
 
-    @Requirement
-    private OpenTelemetrySdkService openTelemetrySdkService;
-
     /**
      * For an unknown reason, {@link #afterProjectsRead(MavenSession)} is invoked when the module is declared as an extension in pom.xml but {@link #afterSessionStart(MavenSession)} is not invoked
      */
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
-        this.openTelemetrySdkService.getTracer(); // TODO remove force initialization
         OtelExecutionListener.registerOtelExecutionListener(session, this.otelExecutionListener);
         logger.debug("OpenTelemetry: afterProjectsRead");
     }
 
     @Override
     public void afterSessionStart(MavenSession session) throws MavenExecutionException {
-        this.openTelemetrySdkService.getTracer(); // TODO remove force initialization
         OtelExecutionListener.registerOtelExecutionListener(session, this.otelExecutionListener);
         logger.debug("OpenTelemetry: afterSessionStart");
     }
 
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
-
+        logger.debug("OpenTelemetry: afterSessionEnd");
     }
 }
