@@ -7,6 +7,7 @@ package co.elastic.maven.opentelemetry;
 import io.opentelemetry.api.trace.Span;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 
 import javax.annotation.Nonnull;
@@ -26,10 +27,21 @@ public class SpanRegistry {
     private Span rootSpan;
 
     private final Map<MojoExecutionKey, Span> mojoExecutionKeySpanMap = new HashMap<>();
+    private final Map<MavenProjectKey, Span> mavenProjectKeySpanMap = new HashMap<>();
 
     @Nullable
     public Span getRootSpan() {
         return rootSpan;
+    }
+
+    @Nonnull
+    public Span getSpan(@Nonnull MavenProject mavenProject) {
+        final MavenProjectKey key = MavenProjectKey.fromMavenProject(mavenProject);
+        final Span span = this.mavenProjectKeySpanMap.get(key);
+        if (span == null) {
+            throw new IllegalStateException("Span not started for project " + mavenProject.getGroupId() + ":" + mavenProject.getArtifactId());
+        }
+        return span;
     }
 
     @Nonnull
@@ -49,6 +61,24 @@ public class SpanRegistry {
             throw new IllegalStateException("Remaining children spans: " + this.mojoExecutionKeySpanMap.keySet().stream().map(MojoExecutionKey::toString).collect(Collectors.joining(", ")));
         }
         return rootSpan;
+    }
+
+    public void putSpan(@Nonnull Span span, @Nonnull MavenProject mavenProject) {
+        MavenProjectKey key = MavenProjectKey.fromMavenProject(mavenProject);
+        Span previousSpanForKey = mavenProjectKeySpanMap.put(key, span);
+        if (previousSpanForKey != null) {
+            throw new IllegalStateException();
+        }
+    }
+
+    @Nonnull
+    public Span removeSpan(@Nonnull MavenProject mavenProject) throws IllegalStateException {
+        MavenProjectKey key = MavenProjectKey.fromMavenProject(mavenProject);
+        Span span = mavenProjectKeySpanMap.remove(key);
+        if (span == null) {
+            throw new IllegalStateException();
+        }
+        return span;
     }
 
     public void putSpan(@Nonnull Span span, @Nonnull MojoExecution mojoExecution) {
@@ -80,6 +110,41 @@ public class SpanRegistry {
         this.rootSpan = rootSpan;
     }
 
+    private static class MavenProjectKey {
+        final String groupId;
+        final String artifactId;
+
+        @Nonnull
+        public static MavenProjectKey fromMavenProject(@Nonnull MavenProject mavenProject) {
+            return new MavenProjectKey(mavenProject.getGroupId(), mavenProject.getArtifactId());
+        }
+
+        private MavenProjectKey(String groupId, String artifactId) {
+            this.groupId = groupId;
+            this.artifactId = artifactId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MavenProjectKey that = (MavenProjectKey) o;
+            return groupId.equals(that.groupId) && artifactId.equals(that.artifactId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(groupId, artifactId);
+        }
+
+        @Override
+        public String toString() {
+            return "MavenProjectKey{" +
+                    "groupId='" + groupId + '\'' +
+                    ", artifactId='" + artifactId + '\'' +
+                    '}';
+        }
+    }
     private static class MojoExecutionKey {
         final String executionId;
         final String goal;
