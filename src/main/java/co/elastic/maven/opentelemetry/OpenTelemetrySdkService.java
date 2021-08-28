@@ -56,7 +56,7 @@ public class OpenTelemetrySdkService implements Initializable, Disposable {
     private SpanExporter spanExporter;
 
     @Override
-    public void dispose() {
+    public synchronized void dispose() {
         logger.debug("OpenTelemetry: dispose OpenTelemetrySdkService...");
         if (this.openTelemetrySdk != null) {
             logger.debug("OpenTelemetry: Shutdown SDK Trace Provider...");
@@ -70,7 +70,17 @@ public class OpenTelemetrySdkService implements Initializable, Disposable {
             }
             // fix https://github.com/cyrille-leclerc/opentelemetry-maven-extension/issues/1
             // working around https://github.com/open-telemetry/opentelemetry-java/issues/3521
-            this.spanExporter.close();
+            try {
+                this.spanExporter.close();
+            } catch (NoClassDefFoundError error) {
+                if (logger.isDebugEnabled()) {
+                    logger.warn("OpenTelemetry: NoClassDefFoundError shutting down SpanExporter: " + error.getMessage(), error);
+                } else {
+                    logger.warn("OpenTelemetry: NoClassDefFoundError shutting down SpanExporter: " + error.getMessage());
+                }
+            }
+            GlobalOpenTelemetry.resetForTest();
+            this.openTelemetrySdk = null;
         }
         logger.debug("OpenTelemetry: OpenTelemetrySdkService disposed");
     }
