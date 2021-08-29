@@ -16,7 +16,7 @@ Add the Maven OpenTelemetry Extension to `${maven.home}/lib/ext` or to the class
 ```
 export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 
-mvn -Dmaven.ext.class.path=path/to/opentelemetry-maven-extension.jar clean verify
+mvn -Dmaven.ext.class.path=path/to/opentelemetry-maven-extension.jar verify
 ```
 
 ### Declaring the extension in the `pom.xml` file
@@ -41,14 +41,8 @@ Add the Maven OpenTelemetry Extension in the `pom.xml` file.
 ```
 export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 
-mvn clean verify
+mvn verify
 ```
-
-### Using the extension as a plugin in `pom.xml`
-
-Allows to configure the OpenTelemetry exporter in `pom.xml`.
-
-⚠️ NOT implemented.
 
 ## Configuration
 
