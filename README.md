@@ -1,5 +1,7 @@
 # Maven OpenTelemetry extension
 
+Maven extension to observe Maven builds as distributed traces.
+
 ## Getting Started
 
 The Maven OpenTelemetry Extension is configured using environment variables or JVM system properties and it can be added to a build using one of the following ways:
@@ -63,8 +65,6 @@ The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto c
 
 ![](https://github.com/cyrille-leclerc/maven-opentelemetry-extension/raw/main/docs/images/maven-execution-trace-jaeger.png)
 
-
-
 ## Example of a distributed trace of a Jenkins pipeline executing a Maven build
 
 Distributed trace combining the OpenTelemetry Maven Extension with the [Jenkins OpenTelemetry plugin](https://plugins.jenkins.io/opentelemetry/).
@@ -76,3 +76,15 @@ Distributed trace combining the OpenTelemetry Maven Extension with the [Jenkins 
 ### Trace visualized with [Jaeger Tracing](https://www.jaegertracing.io/)
 
 ![](https://raw.githubusercontent.com/cyrille-leclerc/opentelemetry-maven-extension/main/docs/images/jenkins-maven-execution-trace-jaeger.png)
+
+# Other CI/CD Tools supporting OpenTelemetry traces
+
+List of other CI/CD tools that support OpenTelemetry traces and integrate with the Maven OpenTelemetry Extension creating a distributed traces providing end to end visibility.
+
+## Jenkins OpenTelemetry Plugin
+
+The [Jenkins OpenTelemetry Plugin](https://plugins.jenkins.io/opentelemetry/) exposes Jenkins pipelines & jobs as OpenTelemetry traces and exposes Jenkins health indicators as OpenTelemetry metrics.
+
+## Otel CLI
+
+The [`otel-cli`](https://github.com/equinix-labs/otel-cli) is a command line wrapper to observe the execution of a shell command as an OpenTelemetry trace.
