@@ -42,6 +42,20 @@ Allows to configure the OpenTelemetry exporter in `pom.xml`.
 
 ⚠️ NOT implemented.
 
+## Configuration
+
+The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto configuration environment variables and JVM system properties](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure).
+
+| System property              | Environment variable        | Description                                                               |
+|------------------------------|-----------------------------|---------------------------------------------------------------------------|
+| otel.exporter.otlp.endpoint  | OTEL_EXPORTER_OTLP_ENDPOINT | The OTLP traces and metrics endpoint to connect to. Must be a URL with a scheme of either `http` or `https` based on the use of TLS. Example `http://localhost:4317`.            |
+| otel.exporter.otlp.headers   | OTEL_EXPORTER_OTLP_HEADERS  | Key-value pairs separated by commas to pass as request headers on OTLP trace and metrics requests.        |
+| otel.exporter.otlp.timeout   | OTEL_EXPORTER_OTLP_TIMEOUT  | The maximum waiting time, in milliseconds, allowed to send each OTLP trace and metric batch. Default is `10000`.  |
+| otel.resource.attributes | OTEL_RESOURCE_ATTRIBUTES | Specify resource attributes in the following format: key1=val1,key2=val2,key3=val3 |
+
+
+ℹ️ The `service.name` is set by default to `maven`, it can be overwritten specifying resource atributes.
+
 
 ## Example
 
