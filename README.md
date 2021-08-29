@@ -2,7 +2,16 @@
 
 ## Getting Started
 
+The Maven OpenTelemetry Extension is configured using environment variables or JVM system properties and it can be added to a build using one of the following ways:
+* adding the extension jar to `${maven.home}/lib/ext`
+* adding the path to the extension jar to`-Dmaven.ext.class.path`,
+* adding the extension as a build extension in the `pom.xml`,
+* (since Maven 3.3.1) configuring the extension in `.mvn/extensions.xml`.
+
+
 ### Adding the extension to the classpath
+
+Add the Maven OpenTelemetry Extension to `${maven.home}/lib/ext` or to the classpath using `-Dmaven.ext.class.path=`.
 
 ```
 export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
@@ -10,10 +19,9 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 mvn -Dmaven.ext.class.path=path/to/opentelemetry-maven-extension.jar clean verify
 ```
 
-### Declaring the extension `pom.xml`
+### Declaring the extension in the `pom.xml` file
 
-Configuration MUST be passed as environment variables with: `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP_TIMEOUT`.
-
+Add the Maven OpenTelemetry Extension in the `pom.xml` file.
 
 ```xml
 <project>
@@ -57,7 +65,7 @@ The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto c
 ℹ️ The `service.name` is set by default to `maven`, it can be overwritten specifying resource atributes.
 
 
-## Example
+## Examples
 
 ![](https://github.com/cyrille-leclerc/maven-opentelemetry-extension/raw/main/docs/images/maven-execution-trace-jaeger.png)
 
