@@ -5,6 +5,7 @@
 
 package co.elastic.maven.opentelemetry;
 
+import co.elastic.maven.opentelemetry.semconv.MavenOtelSemanticAttributes;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -165,7 +166,7 @@ public class OpenTelemetrySdkService implements Initializable, Disposable {
     protected @Nonnull
     Resource getMavenResource() {
         final String mavenVersion = this.runtimeInformation.getMavenVersion();
-        final Attributes attributes = Attributes.of(ResourceAttributes.SERVICE_NAME, "maven", ResourceAttributes.SERVICE_VERSION, mavenVersion);
+        final Attributes attributes = Attributes.of(ResourceAttributes.SERVICE_NAME, MavenOtelSemanticAttributes.ServiceNameValues.SERVICE_NAME_VALUE, ResourceAttributes.SERVICE_VERSION, mavenVersion);
         return Resource.create(attributes);
     }
 }

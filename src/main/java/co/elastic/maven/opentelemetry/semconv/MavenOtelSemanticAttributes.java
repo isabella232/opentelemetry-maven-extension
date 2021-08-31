@@ -23,4 +23,9 @@ public class MavenOtelSemanticAttributes {
     public static final AttributeKey<String> MAVEN_PLUGIN_VERSION =     stringKey("maven.plugin.version");
     public static final AttributeKey<String> MAVEN_EXECUTION_GOAL = stringKey("maven.execution.goal");
     public static final AttributeKey<String> MAVEN_EXECUTION_LIFECYCLE_PHASE = stringKey("maven.execution.lifecyclePhase");
+
+    public static final class ServiceNameValues {
+        public static final String SERVICE_NAME_VALUE = "maven";
+        private ServiceNameValues(){}
+    }
 }
