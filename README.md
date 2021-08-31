@@ -1,3 +1,6 @@
+[![CI](https://github.com/cyrille-leclerc/opentelemetry-maven-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/cyrille-leclerc/opentelemetry-maven-extension/actions/workflows/ci.yml)
+
+
 # Maven OpenTelemetry extension
 
 Maven extension to observe Maven builds as distributed traces.
