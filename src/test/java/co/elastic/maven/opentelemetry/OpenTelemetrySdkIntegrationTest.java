@@ -23,11 +23,13 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Ignore
 public class OpenTelemetrySdkIntegrationTest {
 
     private static final Random RANDOM = new Random();
