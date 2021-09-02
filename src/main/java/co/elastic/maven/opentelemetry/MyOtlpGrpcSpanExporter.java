@@ -18,8 +18,8 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Wrapper of {@link OtlpGrpcSpanExporter} to temporarily fix {@link <a href="https://github.com/cyrille-leclerc/opentelemetry-maven-extension/issues/1">NoClassDefFoundError on GRPC classes after the Maven build is finished #1</a>}
- * thanks to a workaround of {@link <a href="https://github.com/open-telemetry/opentelemetry-java/issues/3521">OtlpGrpcExporter/Netty still active after SdkTracerProvider#shutdown() #3521</a>}
+ * Wrapper of {@link OtlpGrpcSpanExporter} to temporarily fix <a href="https://github.com/cyrille-leclerc/opentelemetry-maven-extension/issues/1">NoClassDefFoundError on GRPC classes after the Maven build is finished #1</a>
+ * thanks to a workaround of <a href="https://github.com/open-telemetry/opentelemetry-java/issues/3521">OtlpGrpcExporter/Netty still active after SdkTracerProvider#shutdown() #3521</a>
  */
 public class MyOtlpGrpcSpanExporter implements SpanExporter {
     private final Logger logger = LoggerFactory.getLogger(getClass());

@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service to configure the {@link OpenTelemetry} instance.
  *
- * Mimic the {@link <a href="https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure">OpenTelemetry SDK Autoconfigure</a>}
+ * Mimic the <a href="https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure">OpenTelemetry SDK Autoconfigure</a>
  * that could not be used as is due to class loading issues when declaring the Maven OpenTelemetry extension using the pom.xml {@code <extension>} declaration.
  *
  * Exception example: https://gist.github.com/cyrille-leclerc/57903e63d1f162969154eec3bb82a576
@@ -163,8 +163,7 @@ public class OpenTelemetrySdkService implements Initializable, Disposable {
      * the Maven OpenTelemetry extension as a pom.xml {@code <extension>}.
      * See exception https://gist.github.com/cyrille-leclerc/2694ce214b7f95b38e1dab02dc36390d
      */
-    protected @Nonnull
-    Resource getMavenResource() {
+    protected @Nonnull Resource getMavenResource() {
         final String mavenVersion = this.runtimeInformation.getMavenVersion();
         final Attributes attributes = Attributes.of(ResourceAttributes.SERVICE_NAME, MavenOtelSemanticAttributes.ServiceNameValues.SERVICE_NAME_VALUE, ResourceAttributes.SERVICE_VERSION, mavenVersion);
         return Resource.create(attributes);

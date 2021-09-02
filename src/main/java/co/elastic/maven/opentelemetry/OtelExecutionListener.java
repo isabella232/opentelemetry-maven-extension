@@ -46,9 +46,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Close the OpenTelemetry SDK (see {@link OpenTelemetrySdkService#close()} on the end of execution of the last project
+ * Close the OpenTelemetry SDK (see {@link OpenTelemetrySdkService#dispose()}  on the end of execution of the last project
  * ({@link #projectSucceeded(ExecutionEvent)} and {@link #projectFailed(ExecutionEvent)}) rather than on the end of the
- * Maven session  {@link #sessionEnded(ExecutionEvent)} because OpenTelemetry & GRPC classes are unloaded by the Maven
+ * Maven session  {@link #sessionEnded(ExecutionEvent)} because OpenTelemetry and GRPC classes are unloaded by the Maven
  * classloader before {@link #sessionEnded(ExecutionEvent)} causing {@link NoClassDefFoundError} messages in the logs.
  */
 @Component(role = ExecutionListener.class, hint = "otel-execution-listener")
@@ -177,9 +177,9 @@ public class OtelExecutionListener extends AbstractExecutionListener {
     }
 
     /**
-     * maven-clean-plugin -> clean
-     * sisu-maven-plugin -> sisu
-     * spotbugs-maven-plugin -> spotbugs
+     * maven-clean-plugin -&gt; clean
+     * sisu-maven-plugin -&gt; sisu
+     * spotbugs-maven-plugin -&gt; spotbugs
      *
      * @param pluginArtifactId the artifact ID of the mojo {@link MojoExecution#getArtifactId()}
      * @return shortened name
