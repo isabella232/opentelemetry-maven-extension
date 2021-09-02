@@ -4,7 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.cyrilleleclerc.opentelemetry.contrib</groupId>
+    <!--
+    groupId intended to become `io.opentelemetry.contrib` as we want to donate this component to the OpenTelemetry project
+    -->
+    <groupId>co.elastic.opentelemetry.contrib</groupId>
     <artifactId>opentelemetry-maven-extension</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -14,14 +17,16 @@
     </description>
     <properties>
         <java.level>8</java.level>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <opentelemetry.version>1.5.0</opentelemetry.version>
     </properties>
 
     <developers>
         <developer>
-            <id>cleclerc</id>
+            <id>cyrille-leclerc</id>
             <name>Cyrille Le Clerc</name>
             <email>cyrille.leclerc@elastic.co</email>
+            <url>https://github.com/cyrille-leclerc</url>
         </developer>
     </developers>
 
@@ -159,8 +164,16 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <artifactSet>
-                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/LICENSE.txt</exclude>
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
@@ -201,23 +214,21 @@
                 </configuration>
             </plugin>
         </plugins>
-        <extensions>
-<!--
-            <extension>
-                <groupId>co.elastic.maven</groupId>
-                <artifactId>opentelemetry-maven-extension</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
-            </extension>
--->
-        </extensions>
     </build>
     <distributionManagement>
         <repository>
             <id>github</id>
             <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/cyrille-leclerc/opentelemetry-maven-extension</url>
+            <url>https://maven.pkg.github.com/elastic/opentelemetry-maven-extension</url>
         </repository>
     </distributionManagement>
+    <scm>
+        <connection>scm:git:https://github.com/elastic/opentelemetry-maven-extension.git</connection>
+    </scm>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/elastic/opentelemetry-maven-extension/issues</url>
+    </issueManagement>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>

@@ -1,4 +1,4 @@
-[![CI](https://github.com/cyrille-leclerc/opentelemetry-maven-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/cyrille-leclerc/opentelemetry-maven-extension/actions/workflows/ci.yml)
+[![CI](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml)
 
 
 # Maven OpenTelemetry extension
@@ -34,7 +34,7 @@ Add the Maven OpenTelemetry Extension in the `pom.xml` file.
   <build>
     <extensions>
       <extension>
-        <groupId>co.elastic.maven</groupId>
+        <groupId>co.elastic.opentelemetry.contrib</groupId>
         <artifactId>opentelemetry-maven-extension</artifactId>
         <version>0.1.0-SNAPSHOT</version>
       </extension>
@@ -66,7 +66,7 @@ The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto c
 
 ## Examples
 
-![](https://github.com/cyrille-leclerc/maven-opentelemetry-extension/raw/main/docs/images/maven-execution-trace-jaeger.png)
+![](https://github.com/elastic/maven-opentelemetry-extension/raw/main/docs/images/maven-execution-trace-jaeger.png)
 
 ## Example of a distributed trace of a Jenkins pipeline executing a Maven build
 
