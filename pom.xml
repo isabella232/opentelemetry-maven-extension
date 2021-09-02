@@ -8,7 +8,7 @@
     -->
     <groupId>co.elastic.opentelemetry.contrib</groupId>
     <artifactId>opentelemetry-maven-extension</artifactId>
-    <version>0.1.0-beta-2</version>
+    <version>0.1.0-beta-3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>OpenTelemetry Maven Extension</name>
     <description>
@@ -230,7 +230,7 @@
     </distributionManagement>
     <scm>
         <connection>scm:git:https://github.com/elastic/opentelemetry-maven-extension.git</connection>
-      <tag>opentelemetry-maven-extension-0.1.0-beta-2</tag>
+      <tag>HEAD</tag>
   </scm>
     <issueManagement>
         <system>GitHub Issues</system>
