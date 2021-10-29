@@ -1,6 +1,11 @@
+# Maven OpenTelemetry extension
+
+Maven extension to observe Maven builds as distributed traces.
 
 | ⚠️ WARNING: This version of the OpenTelemetry Maven Extension is deprecated in favor of the offficial [OpenTelemetry Maven Extension](https://github.com/open-telemetry/opentelemetry-java-contrib/tree/main/maven-extension) hosted by the official [open-telemetry/opentelemetry-java-contrib/](https://github.com/open-telemetry/opentelemetry-java-contrib) project |
 | --- |
+
+**Migration**
 
 To migrate please replace "co.elastic.opentelemetry.contrib:opentelemetry-maven-extension:0.1.0-beta-5" by "io.opentelemetry.contrib:opentelemetry-maven-extension:1.7.0-alpha":
 
@@ -29,14 +34,8 @@ To migrate please replace "co.elastic.opentelemetry.contrib:opentelemetry-maven-
 ---
 
 
-[![CI](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml)
 
-
-# Maven OpenTelemetry extension
-
-Maven extension to observe Maven builds as distributed traces.
-
-## Getting Started
+## Getting Started (Deprecated)
 
 The Maven OpenTelemetry Extension is configured using environment variables or JVM system properties and it can be added to a build using one of the following ways:
 * adding the extension jar to `${maven.home}/lib/ext`
@@ -59,7 +58,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 mvn -Dmaven.ext.class.path=target/dependency/opentelemetry-maven-extension.jar verify
 ```
 
-### Declaring the extension in the `pom.xml` file
+### Declaring the extension in the `pom.xml` file (Deprecated)
 
 Add the Maven OpenTelemetry Extension in the `pom.xml` file:
 
@@ -84,7 +83,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 mvn verify
 ```
 
-## Configuration
+## Configuration  (Deprecated)
 
 The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto configuration environment variables and JVM system properties](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure).
 
@@ -99,7 +98,7 @@ The Maven OpenTelemetry Extension supports a subset of the [OpenTelemetry auto c
 ℹ️ The `service.name` is set by default to `maven`, it can be overwritten specifying resource atributes.
 
 
-## Examples
+## Examples 
 
 ![](https://github.com/elastic/maven-opentelemetry-extension/raw/main/docs/images/maven-execution-trace-jaeger.png)
 
