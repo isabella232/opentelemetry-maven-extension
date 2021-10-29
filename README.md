@@ -1,3 +1,34 @@
+
+| ⚠️ WARNING: This version of the OpenTelemetry Maven Extension is deprecated in favor of the offficial [OpenTelemetry Maven Extension](https://github.com/open-telemetry/opentelemetry-java-contrib/tree/main/maven-extension) hosted by the official [open-telemetry/opentelemetry-java-contrib/](https://github.com/open-telemetry/opentelemetry-java-contrib) project |
+| --- |
+
+To migrate please replace "co.elastic.opentelemetry.contrib:opentelemetry-maven-extension:0.1.0-beta-5" by "io.opentelemetry.contrib:opentelemetry-maven-extension:1.7.0-alpha":
+
+```xml
+<project>
+  ...
+  <build>
+    <extensions>
+     <!-- DEPRECATED -->
+      <extension>
+          <groupId>co.elastic.opentelemetry.contrib</groupId>
+          <artifactId>opentelemetry-maven-extension</artifactId>
+          <version>0.1.0-beta-5</version>
+      </extension>
+      <!-- NEW ARTIFACT -->
+      <extension>
+          <groupId>io.opentelemetry.contrib</groupId>
+          <artifactId>opentelemetry-maven-extension</artifactId>
+          <version>1.7.0-alpha</version>
+      </extension>
+    </extensions>
+  </build>
+</project>
+```
+
+---
+
+
 [![CI](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/elastic/opentelemetry-maven-extension/actions/workflows/ci.yml)
 
 
